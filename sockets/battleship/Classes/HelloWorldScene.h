@@ -29,7 +29,7 @@ public:
     
     void requestFromClient(int clickedTile = 0);
 
-    Label* createLabel(string title, Vec2 position, Color3B color);
+    Label* createLabel(string title, Vec2 position, Color3B color, const char* font = "fonts/Marker Felt.ttf", bool systemFont = false, int fontSize = 24);
     
     void loadBattleArea(Button* btn, int& countForP, Vec2 position);
     

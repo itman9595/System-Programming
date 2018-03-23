@@ -4,11 +4,6 @@
 #define TILE_COUNT 10
 #define TILE_SIZE 40
 
-#define SKT_PATH "socket"
-#define BUF_SIZE 1024
-#define BACKLOG 5
-#define DATA "The sea is calm tonight, the tide is full . . ."
-
 USING_NS_CC;
 
 Scene* HelloWorld::createScene()
@@ -43,11 +38,15 @@ Label* p2_LeftShips;
 auto visibleSize = Size(0, 0);
 Vec2 origin = Vec2(0, 0);
 
-Label* HelloWorld::createLabel(string title, Vec2 position, Color3B color) {
-    auto label = Label::createWithTTF(title, "fonts/Marker Felt.ttf", 24);
+Label* HelloWorld::createLabel(string title, Vec2 position, Color3B color, const char* font, bool systemFont, int fontSize) {
+    auto label = Label::createWithTTF(title, font, fontSize);
+    if(system) {
+       label = Label::createWithSystemFont(title, font, fontSize);
+    }
+    
     if (label == nullptr)
     {
-        problemLoading("'fonts/Marker Felt.ttf'");
+        problemLoading(font);
     }
     else
     {
@@ -83,9 +82,21 @@ void HelloWorld::restoreTileSet(Vector<Button*>& tileSet) {
 // this is required for enumerating each tile and defining unique tag
 
 void HelloWorld::loadBattleArea(Button* btn, int& countForP, Vec2 position) {
+    
+    string indicators[2][10] = {
+        {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"},
+        {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
+    };
+    
     for(int i=0;i<rows;i++) {
         for(int j=0;j<columns;j++) {
             btn->setPosition(Vec2(position.x + j*TILE_SIZE, position.y + i*TILE_SIZE));
+            if(j == 0) {
+               createLabel(indicators[0][i], Vec2(btn->getPosition().x-(btn->getContentSize().width+10), btn->getPosition().y), Color3B(255, 255, 255), "Arial", true, 16);
+            }
+            if(i == 0) {
+                createLabel(indicators[1][j], Vec2(btn->getPosition().x, btn->getPosition().y-(btn->getContentSize().height+10)), Color3B(255, 255, 255), "Arial", true, 16);
+            }
             btn->setTag(countForP++);
             btn->setName("normal");
             this->addChild(btn->clone());
@@ -107,7 +118,6 @@ void HelloWorld::showMap() {
                 break;
             case Widget::TouchEventType::ENDED: {
                 
-//                requestFromClient(, );
                 /* ------------ This condition is for placing ships for each player ------------ */
                 
                 int tag = btn->getTag();
@@ -199,7 +209,7 @@ void HelloWorld::showMap() {
         }
     });
     
-    loadBattleArea(button, countForP1, Vec2(visibleSize.width/2 + 80, visibleSize.height/2 + 200));
+    loadBattleArea(button, countForP1, Vec2(visibleSize.width/2 + 100, visibleSize.height/2 + 200));
     
     // last tile is required for placing Player 2's area, beginning from the origin.X+size.Width + some indentation, to make the design of the game looking better
     
@@ -210,37 +220,13 @@ void HelloWorld::showMap() {
     
     Button* tempBtn = (Button*)this->getChildByTag(countForP1/2-1 + 5);
     
-    auto player1Lbl = Label::createWithTTF("Player 1", "fonts/Marker Felt.ttf", 24);
-    if (player1Lbl == nullptr)
-    {
-        problemLoading("'fonts/Marker Felt.ttf'");
-    }
-    else
-    {
-        // position the label on the center of the screen
-        player1Lbl->setPosition(Vec2(visibleSize.width/2 + tempBtn->getPosition().x + tempBtn->getContentSize().width/2, visibleSize.height/2 + lastTileForPlayer1->getPosition().y + lastTileForPlayer1->getContentSize().height + 20));
-        
-        // add the label as a child to this layer
-        this->addChild(player1Lbl, 1);
-    }
+    createLabel("Player 1", Vec2(visibleSize.width/2 + tempBtn->getPosition().x + tempBtn->getContentSize().width/2, visibleSize.height/2 + lastTileForPlayer1->getPosition().y + lastTileForPlayer1->getContentSize().height + 20), Color3B(255, 255, 255));
     
     loadBattleArea(button, countForP2, Vec2(visibleSize.width/2 + lastTileForPlayer1->getPosition().x + lastTileForPlayer1->getContentSize().width + 100, visibleSize.height/2 + 200));
     
     tempBtn = (Button*)this->getChildByTag(countForP2/2-1 + 5);
     
-    auto player2Lbl = Label::createWithTTF("Player 2", "fonts/Marker Felt.ttf", 24);
-    if (player2Lbl == nullptr)
-    {
-        problemLoading("'fonts/Marker Felt.ttf'");
-    }
-    else
-    {
-        // position the label on the center of the screen
-        player2Lbl->setPosition(Vec2(visibleSize.width/2 + tempBtn->getPosition().x + tempBtn->getContentSize().width/2, visibleSize.height/2 + lastTileForPlayer1->getPosition().y + lastTileForPlayer1->getContentSize().height + 20));
-        
-        // add the label as a child to this layer
-        this->addChild(player2Lbl, 1);
-    }
+    createLabel("Player 2", Vec2(visibleSize.width/2 + tempBtn->getPosition().x + tempBtn->getContentSize().width/2, visibleSize.height/2 + lastTileForPlayer1->getPosition().y + lastTileForPlayer1->getContentSize().height + 20), Color3B(255, 255, 255));
     
     beginGameBtn = MenuItemLabel::create(Label::createWithTTF("Start Game", "fonts/Marker Felt.ttf", 24), CC_CALLBACK_1(HelloWorld::startGame, this));
     
@@ -253,7 +239,7 @@ void HelloWorld::showMap() {
         tempBtn = (Button*)this->getChildByTag(0);
         beginGameBtn->setEnabled(false);
         beginGameBtn->setColor(inactiveColor);
-        beginGameBtn->setPosition(Vec2(500, tempBtn->getPosition().y - 70));
+        beginGameBtn->setPosition(Vec2(500, tempBtn->getPosition().y - 130));
     }
 
 }
@@ -269,9 +255,9 @@ void HelloWorld::startGame(Ref* pSender) {
         if(!player_turn_Lbl) {
             player_turn_Lbl = createLabel(player_turn+" turn to make attack", Vec2(origin.x + visibleSize.width/2+500, 700), Color3B(255, 255, 0));
             Button* tempBtn = (Button*)this->getChildByTag(TILE_COUNT/2);
-            p1_LeftShips = createLabel("", Vec2(tempBtn->getPosition().x - tempBtn->getContentSize().width/2, tempBtn->getPosition().y - 40), Color3B(0, 255, 255));
+            p1_LeftShips = createLabel("", Vec2(tempBtn->getPosition().x - tempBtn->getContentSize().width/2, tempBtn->getPosition().y - 90), Color3B(0, 255, 255));
             tempBtn = (Button*)this->getChildByTag(countForP2-(TILE_COUNT*TILE_COUNT)+5);
-            p2_LeftShips = createLabel("", Vec2(tempBtn->getPosition().x - tempBtn->getContentSize().width/2, tempBtn->getPosition().y - 40), Color3B(0, 255, 255));
+            p2_LeftShips = createLabel("", Vec2(tempBtn->getPosition().x - tempBtn->getContentSize().width/2, tempBtn->getPosition().y - 90), Color3B(0, 255, 255));
             // tempBtn serves to make the game design better
         } else {
             player_turn_Lbl->setVisible(true);
